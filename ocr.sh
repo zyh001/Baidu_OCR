@@ -23,6 +23,9 @@ about(){
 	exit 0
 }
 trap "killme" 2
+if [[ ! -f "${PWD}/baidu_OCR.conf" ]];then
+	python3 ${PWD}/baidu_OCR.py --init
+fi
 ARGS=`getopt -o 'hsd:o::' -l 'help,show,directory:output::' -n $(basename $BASH_SOURCE) -q -- "$@"`
 if [ $? != 0 ]; then
     echo "$* 错误的参数"
