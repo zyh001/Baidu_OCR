@@ -22,7 +22,21 @@ about(){
 	echo -e "本脚本由stackzhao<stackzhao@gmail.com>开发\n\n"
 	exit 0
 }
+in_IM(){
+	echo "正在安装一些必要的软件，请稍等..."
+	[ $(id -u) != "0" ] && { echo "当前登录非root用户，以下操作可能需要您输入密码";echo ;}
+	wget -q https://imagemagick.org/download/binaries/ImageMagick-i386-pc-solaris2.11.tar.gz -P /tmp
+	tar xzf /tmp/ImageMagick-i386-pc-solaris2.11.tar.gz -C /tmp
+	cd /tmp/ImageMagick-*
+	sudo cp -R ./* /usr
+	sudo cp -R ./etc /
+	cd ${OLDPWF}
+	rm -rf /tmp/ImageMagick-*
+	command -v convert >/dev/null 2>&1 && echo "安装完成"
+}
+
 trap "killme" 2
+type convert >/dev/null 2>&1 || in_IM
 if [[ ! -f "${PWD}/baidu_OCR.conf" ]];then
 	python3 ${PWD}/baidu_OCR.py --init
 fi
@@ -119,6 +133,12 @@ do
 	check=0
 	ff=1
 	while [[ $check == 0 ]];do
+		if [[ $(du $file -s | awk '{ print $1}') -ge 4000 ]];then 
+			echo "正在压缩图片，这可能会影响识别结果！！" 
+			cimg=1
+			convert -quality 75 ${file} "${filename}(new).jpg" && file="${filename}(new).jpg"
+			[ $? != "0" ] && echo "压缩失败"
+		fi
 		python3 ${PWD}/baidu_OCR.py -i ${file} > /tmp/.ocr.cache 2>/dev/null
 		cat /tmp/.ocr.cache >> ${outputfile}
 		if [[ $? != 0 ]];then
@@ -145,6 +165,9 @@ do
 				echo -e "\n=====The END=====\n"
 			else
 				echo -e "成功\n"
+			fi
+			if [[ ${cimg} == 1 ]];then
+				rm -f ${file}
 			fi
 			check=1
 		fi
