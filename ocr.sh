@@ -6,7 +6,7 @@ getdir(){
 		kill -9 $$
 		exit 1
 	fi
-        find $1 -type f -printf "%AY%Aj%AH%AM%AS %h/%f\n" | grep -E -i '\.jpg|\.png|\.jpeg' | sort -n | cut -f2 -d' '
+        find $1 -type f -printf "%TY%Tj%TH%TM%TS %h/%f\n" | grep -E -i '\.jpg|\.png|\.jpeg' | sort -n | cut -f2 -d' '
 }
 killme(){
 	echo "进程被终止"
