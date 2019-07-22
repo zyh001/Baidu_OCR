@@ -25,23 +25,20 @@ about(){
 in_IM(){
 	echo "正在安装一些必要的软件，请稍等..."
 	[ $(id -u) != "0" ] && { echo "当前登录非root用户，以下操作可能需要您输入密码";echo ;}
-	wget -q https://github.com/zyh001/zyh001.github.io/raw/master/im.tar -P /tmp
-	sudo tar xf /tmp/im.tar -C /usr/local
-	cat << EOF > ~/.bashrc
-	imdir=$(cd /usr/local/im && pwd)
-	export MAGICK_HOME="${imdir}"
-	export PATH="$MAGICK_HOME/bin:$PATH
-	LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$MAGICK_HOME/lib
-	export LD_LIBRARY_PATH
-EOF
-	. ~/.bashrc
+	wget -q https://imagemagick.org/download/binaries/ImageMagick-i386-pc-solaris2.11.tar.gz -P /tmp
+	tar xzf /tmp/ImageMagick-i386-pc-solaris2.11.tar.gz -C /tmp
+	cd /tmp/ImageMagick-*
+	sudo cp -R ./* /usr
+	sudo cp -R ./etc /
+	cd ${OLDPWF}
+	rm -rf /tmp/ImageMagick-*
 	command -v convert >/dev/null 2>&1 && echo "安装完成"
 }
 
 trap "killme" 2
 type convert >/dev/null 2>&1 || in_IM
-if [[ ! -f "$(cd $(dirname $0); pwd)/baidu_OCR.conf" ]];then
-	python3 $(cd $(dirname $0); pwd)/baidu_OCR.py --init
+if [[ ! -f "${PWD}/baidu_OCR.conf" ]];then
+	python3 ${PWD}/baidu_OCR.py --init
 fi
 ARGS=`getopt -o 'hsd:o::' -l 'help,show,directory:output::' -n $(basename $BASH_SOURCE) -q -- "$@"`
 if [ $? != 0 ]; then
@@ -113,8 +110,6 @@ do
 	filename=$(basename ${file})
 	filedir=$(dirname ${file})
 	unfilename=${filename%%.*}
-	fsuffix=${filename##*.}
-	unset ff check cimg
 	if [[ ${output} == yes ]]; then
 		outputfile="${filedir}/${unfilename}.txt"
 	elif [[ -d ${outfile} ]]; then
@@ -144,7 +139,7 @@ do
 			convert -quality 75 ${file} "${filename}(new).jpg" && file="${filename}(new).jpg"
 			[ $? != "0" ] && echo "压缩失败"
 		fi
-		python3 $(cd $(dirname $0); pwd)/baidu_OCR.py -i ${file} > /tmp/.ocr.cache 2>/dev/null
+		python3 ${PWD}/baidu_OCR.py -i ${file} > /tmp/.ocr.cache 2>/dev/null
 		cat /tmp/.ocr.cache >> ${outputfile}
 		if [[ $? != 0 ]];then
 			echo '失败，重新尝试'
@@ -160,9 +155,9 @@ do
                         	fi
 				echo -e "\n！！本段识别失败！！\n" >> ${outputfile}
 			fi
-			(( ff++ ))
+			ff=$((ff + 1))
 		else
-			(( num++ ))
+			num=$((num + 1))
 			sed -i '${/^[0-9]\+$/d}' ${outputfile}
 			if [[ ${filechange} == 1 ]] ;then
 				echo -e "\n=====识别结果====="
